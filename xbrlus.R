@@ -2,6 +2,7 @@
 # Try to use xbrl-us .....
 # Need to have an access key .....
 #
+# Source secretkey before starting R to define env variable for access
 
 ## OLD ticker list for SPX - Needs to be updated. There also some bad tickers to remove
 
@@ -73,3 +74,9 @@ values <- xbrlValues(
 )
 
 # Shape the data 
+library(dplyr)
+
+
+
+
+
