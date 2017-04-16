@@ -4,6 +4,10 @@
 library(XBRL)
 library(xbrlus)
 library(rvest)
+library(dplyr)
+
+options(download.file.method = 'curl')
+
 
 x <- XBRL()
 
@@ -60,6 +64,7 @@ tckrs <- Filter(function(x) is.data.frame(x), rslt )
 
 ## Save the tckrs into a file to avoid redoing the work !
 save(tckrs, file = 'edgarTickersOldSPX')
+load(file = 'edgarTickersOldSPX')
 
 hrefFromCIK <- function(cik) {
   h1 <- "https://www.sec.gov/cgi-bin/browse-edgar?company=&CIK="
@@ -67,19 +72,43 @@ hrefFromCIK <- function(cik) {
   paste0(h1,cik,h2)  
 }
 
+## Warning - need to check that it is a 10-K and not 10-K/A
+#hrefFromIndexPage <- function(rpage) {
+#  n <- html_nodes(rpage, '.tableFile2 tr:nth-child(2) td:nth-child(2) a:first-child')
+#  html_attr(n, 'href')
+#}
+
 hrefFromIndexPage <- function(rpage) {
-  n <- html_nodes(rpage, '.tableFile2 tr:nth-child(2) td:nth-child(2) a:first-child')
+  n <- html_nodes(rpage, '.tableFile2')  ## Get the table
+  z <- html_table(n)[[1]]   ## Make a data frame
+  row <- which(z$Filings == "10-K")[1]   ## Get the row number of the first 10-K
+  n <- html_nodes(rpage, paste0('.tableFile2 tr:nth-child(', 
+                                row+1,                               ## +1 to skip headers
+                                ') td:nth-child(2) a:first-child'))
   html_attr(n, 'href')
 }
 
+## Warning - sometimes files are in a different order 
+## Need to look for the row containing type EX-101.INS
+#hrefFromArchivePage <- function(dpage) {
+#  n <- html_nodes(dpage, '.tableFile[summary="Data Files"] tr:nth-child(2) td:nth-child(3) a')
+#  html_attr(n, 'href')
+#}
+
 hrefFromArchivePage <- function(dpage) {
-  n <- html_nodes(dpage, '.tableFile[summary="Data Files"] tr:nth-child(2) td:nth-child(3) a')
-  html_attr(n, 'href')
+  n <- html_nodes(dpage, '.tableFile[summary="Data Files"]')
+  z <- html_table(n)[[1]]
+  row <- which(z$Type == 'EX-101.INS')[1]
+  n <- html_nodes(dpage, paste0('.tableFile[summary="Data Files"] tr:nth-child(',
+                                row+1,
+                                ') td:nth-child(3) a'))
+    html_attr(n, 'href')
 }
+
 
 
 ## Assume valid list of tickers .... Each has name, sic, and cik (all that is required)
-for (t in tckrs) {
+for (t in tckrs[36:length(tckrs)]) {
   print(t)
   # Build a uri for searching Edgar
   href <- hrefFromCIK(t$cik)
@@ -95,12 +124,15 @@ for (t in tckrs) {
   dpage <- read_html(paste0('https://www.sec.gov/', href10k))
   hrefXML <- hrefFromArchivePage(dpage)
   
+  ## Sanity check
+  if( length(hrefXML) == 0) next
+  
   # And download the data into the cache directory
   xbrlDoAll(paste0('https://www.sec.gov/', hrefXML), 
             cache.dir = "./xbrl.Cache/", 
             delete.cached.inst = FALSE)
   # Wait to avoid anoying the SEC
-  Sys.sleep(30)
+  Sys.sleep(10)
 }
 
 
