@@ -1,7 +1,15 @@
 library(XBRL)
 library(dplyr)
 
-xd <- xbrlDoAll("klx-20170131.xml", cache.dir = "./rss", delete.cached.inst = FALSE)
+XBRL()
+
+xd <- xbrlDoAll("./xbrl.Cache/abt-20161231.xml", cache.dir = "./xbrl.Cache", delete.cached.inst = FALSE)
+xd <- xbrlDoAll("./xbrl.Cache/aapl-20160924.xml", cache.dir = "./xbrl.Cache", delete.cached.inst = FALSE)
+xd <- xbrlDoAll("https://www.sec.gov/Archives/edgar/data/1307969/000168316817000653/none-20161231.xml", cache.dir = "./xbrl.Cache", delete.cached.inst = FALSE)
+xd <- xbrlDoAll('https://www.sec.gov/Archives/edgar/data/66740/000155837017000479/mmm-20161231.xml', cache.dir = "./xbrl.Cache", delete.cached.inst = FALSE)
+
+## Code above for testing downloading .... move elsewhere
+## Code below assumes that xd has been successfully "filled"
 
 variablesEndOfYear <- c(
   'us-gaap_AssetsCurrent',
@@ -48,7 +56,7 @@ endDateFY <- (xd$fact %>% filter(elementId == 'dei_DocumentPeriodEndDate') %>%
 # Extract period "flows"
 xd$fact %>% filter(elementId %in% variablesPeriod) %>% 
   left_join(xd$context, by = "contextId") %>%
-  left_join(xd$unit, by = "unitId") %>% 
+  left_join(xd$unit, by = "unitId") %>%                     # Warning ..... joining factors with different levels !!
   filter(contextId == periodFY) %>%
   select(elementId, fact)
   #  select(contextId, startDate, endDate, fact, elementId)
@@ -63,7 +71,7 @@ xd$fact %>% filter(elementId %in% variablesEndOfYear) %>%
 #  select(contextId, startDate, endDate, fact, elementId, unit)
 
 
-
+## Need to add company name & cik
 
 
 

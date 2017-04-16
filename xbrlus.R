@@ -1,20 +1,21 @@
 #
-# Try to use xbrl-us .....
+# Try to use xbrl-us to download data 
 # Need to have an access key .....
 #
+
 # Source secretkey before starting R to define env variable for access
 
 ## OLD ticker list for SPX - Needs to be updated. There also some bad tickers to remove
 
-spx <- c('ABT', 'ABBV', 'ACN', 'ADBE', 'ADT', 'AAP', 'AES', 'AET', 'AFL', 'AMG', 'A',
-         'GAS', 'APD', 'ARG', 'AKAM', 'AA', 'AGN', 'ALXN', 'ALLE', 'ADS', 'ALL', 'ALTR', 'MO')
-junk <- c('AMZN', 'AEE', 'AAL', 'AEP', 'AXP', 'AIG', 'AMT', 'AMP', 'ABC', 'AME', 'AMGN', 'APH', 
-         'APC', 'ADI', 'AON', 'APA', 'AIV', 'AMAT', 'ADM', 'AIZ', 'T', 'ADSK', 'ADP', 'AN', 
-         'AZO', 'AVGO', 'AVB', 'AVY', 'BHI', 'BLL', 'BAC', 'BK', 'BCR', 'BXLT', 'BAX', 'BBT',
-         'BDX', 'BBBY', 'BRK-B', 'BBY', 'BLX', 'HRB', 'BA', 'BWA', 'BXP', 'BSK', 'BMY', 'BRCM',
-         'BF-B', 'CHRW', 'CA', 'CVC', 'COG', 'CAM', 'CPB', 'COF', 'CAH', 'HSIC', 'KMX', 'CCL',
+spx1 <- c('ABT', 'ABBV', 'ACN', 'ADBE', 'ADT', 'AAP', 'AES', 'AET', 'AFL', 'AMG', 'A',
+         'GAS', 'APD', 'ARG', 'AKAM', 'AA', 'AGN', 'ALXN', 'ALLE', 'ADS', 'ALL', 'ALTR', 'MO',
+         'AMZN', 'AEE', 'AAL', 'AEP', 'AXP', 'AIG', 'AMT', 'AMP', 'ABC', 'AME', 'AMGN', 'APH', 
+         'APC', 'ADI', 'AON', 'APA', 'AIV', 'AMAT', 'ADM', 'AIZ', 'T', 'ADSK', 'ADP', 'AN')
+spx2 <- c('AZO', 'AVGO', 'AVB', 'AVY', 'BHI', 'BLL', 'BAC', 'BK', 'BCR', 'BXLT', 'BAX', 'BBT',
+         'BDX', 'BBBY', 'BBY', 'BLX', 'HRB', 'BA', 'BWA', 'BXP', 'BMY', 'BRCM', # 'BRK-B'
+         'BF-B', 'CHRW', 'CA',  'COG', 'CPB', 'COF', 'CAH', 'HSIC', 'KMX', 'CCL') # 'CVC',
          'CAT', 'CBG', 'CBS', 'CELG', 'CNP', 'CTL', 'CERN', 'CF', 'SCHW', 'CHK', 'CVX', 'CMG',
-         'CB', 'CI', 'XEC', 'CINF', 'CTAS', 'CSCO', 'C', 'CTXS', 'CLX', 'CME', 'CMS', 'COH',
+         'CB', 'CI', 'XEC', 'CINF', 'CTAS', 'CSCO', 'C', 'CTXS', 'CLX', 'CME', 'CMS', 'COH')
          'KO', 'CCE', 'CTSH', 'CL', 'CMCSA', 'CMA', 'CSC', 'CAG', 'COP', 'CNX', 'ED', 'STZ',
          'GLW', 'COST', 'CCI', 'CSX', 'CMI', 'CVS', 'DHI', 'DHR', 'DRI', 'DVA', 'DE', 'DLPH',
          'DAL', 'XRAY', 'DVN', 'DO', 'DTV', 'DFS', 'DISCA', 'DISCK', 'DG', 'DLTR', 'D', 'DOV',
@@ -54,11 +55,12 @@ junk <- c('AMZN', 'AEE', 'AAL', 'AEP', 'AXP', 'AIG', 'AMT', 'AMP', 'ABC', 'AME',
 library(xbrlus)
 
 # List of companies
-#companies <- xbrlCIKLookup(spx)
+companies <- xbrlCIKLookup(spx)
 companies <- xbrlCIKLookup(c('aapl', 'tsla'))
 
 # List of financial elements to download
-elements <- xbrlBaseElement(c('Assets', 'Liabilities', 'InterestExpense','ProfitLoss'))
+variables <- c('Assets', 'Liabilities', 'InterestExpense','ProfitLoss')
+elements <- xbrlBaseElement(variables)
 
 # Understand this ....
 values <- xbrlValues( 
@@ -66,17 +68,23 @@ values <- xbrlValues(
   Element = elements$elementName, 
   DimReqd = FALSE, 
   Period = "Y",
-  Year = 2015,
+  Year = 2016,
   NoYears = 1,
   Ultimus = TRUE,
   Small = TRUE,
   as_data_frame = TRUE
 )
 
-# Shape the data 
+# Prepare the data 
+# Steps: 
+# 1) Check that all figures are in the same units!
+# 2) Shape (long -> wide)
 library(dplyr)
+library(tidyr)
+df <- select(values, entity, elementName, amount) %>%
+      spread(elementName, amount)
 
-
+# What to do with NA values? Leave 
 
 
 
