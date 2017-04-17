@@ -68,7 +68,7 @@ load(file = 'edgarTickersOldSPX')
 
 hrefFromCIK <- function(cik) {
   h1 <- "https://www.sec.gov/cgi-bin/browse-edgar?company=&CIK="
-  h2 <- "&type=10-k&owner=exclude&count=10"
+  h2 <- "&type=10-k&owner=exclude&count=20"
   paste0(h1,cik,h2)  
 }
 
@@ -82,10 +82,14 @@ hrefFromIndexPage <- function(rpage) {
   n <- html_nodes(rpage, '.tableFile2')  ## Get the table
   z <- html_table(n)[[1]]   ## Make a data frame
   row <- which(z$Filings == "10-K")[1]   ## Get the row number of the first 10-K
+  if (!is.na(row)) { 
   n <- html_nodes(rpage, paste0('.tableFile2 tr:nth-child(', 
                                 row+1,                               ## +1 to skip headers
                                 ') td:nth-child(2) a:first-child'))
   html_attr(n, 'href')
+  } else {
+    NA
+  }
 }
 
 ## Warning - sometimes files are in a different order 
@@ -108,7 +112,7 @@ hrefFromArchivePage <- function(dpage) {
 
 
 ## Assume valid list of tickers .... Each has name, sic, and cik (all that is required)
-for (t in tckrs[36:length(tckrs)]) {
+for (t in tckrs[127:length(tckrs)]) {
   print(t)
   # Build a uri for searching Edgar
   href <- hrefFromCIK(t$cik)
@@ -119,7 +123,8 @@ for (t in tckrs[36:length(tckrs)]) {
   # Get an href to the first 10-K report page
   # This is a relative link
   href10k <- hrefFromIndexPage(rpage)
-
+  if (is.na(href10k)) next
+    
   # Read the document page
   dpage <- read_html(paste0('https://www.sec.gov/', href10k))
   hrefXML <- hrefFromArchivePage(dpage)
